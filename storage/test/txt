@@ -1,0 +1,218 @@
+  const setupWorksheet = (ws) => {
+    ws.getCell('AO14').value = documentNumber;
+    ws.getCell('AW14').value = new Date(date).toLocaleDateString();
+    //Инпуты организации
+    ws.getCell('A6').value = getOrganizationByKey(organizationSelect); //@TODO: заменить инпут организации на селект
+    ws.getCell('A8').value = sender;
+    ws.getCell('A10').value = receiver;
+    //Инпуты Кода
+    ws.getCell('BQ5').value = OCUDCode;
+    ws.getCell('BQ6').value = OPKOCode;
+    ws.getCell('BQ11').value = OKPDType;
+    ws.getCell('BQ12').value = type;
+
+    //Материально отвественное лицо
+    ws.getCell('T15').value = getPositionByKey(materialFaceSelect); //TODO:Добавить должность
+    ws.getCell('AC15').value = materialFaceInput;
+    //Руководитель
+    ws.getCell('I17').value = getPositionByKey(bossSelect); //TODO:Добавить должность
+    ws.getCell('AC17').value = bossInput;
+    //Главный бухгалтер
+    ws.getCell('BK17').value = accountant;
+
+    //время
+    ws.getCell('Y23').value = data[0].releaseTime[0].time;
+    ws.getCell('AB23').value = data[0].releaseTime[1].time;
+    ws.getCell('AE23').value = data[0].releaseTime[2].time;
+    ws.getCell('AH23').value = data[0].releaseTime[3].time;
+    ws.getCell('AK23').value = data[0].releaseTime[4].time;
+
+    let startIndex = 26;
+    for (let row of data) {
+      const measure = getMeasureByName(row.name);
+      console.log(row);
+      ws.getCell('A' + startIndex).value = getNameByKey(row.name); //TODO: getNameByKey
+      ws.getCell('M' + startIndex).value = row.name;
+      ws.getCell('Q' + startIndex).value = measure.title; //TODO: getMeasureByKey
+      ws.getCell('U' + startIndex).value = measure.code;
+      ws.getCell('Y' + startIndex).value = row.releaseTime[0].value;
+      ws.getCell('AB' + startIndex).value = row.releaseTime[1].value;
+      ws.getCell('AE' + startIndex).value = row.releaseTime[2].value;
+      ws.getCell('AH' + startIndex).value = row.releaseTime[3].value;
+      ws.getCell('AK' + startIndex).value = row.releaseTime[4].value;
+      ws.getCell('AQ' + startIndex).value = row.returnedProduction;
+      ws.getCell('AV' + startIndex).value = row.count;
+      ws.getCell('AZ' + startIndex).value = row.discountPrice.price;
+      ws.getCell('BE' + startIndex).value = row.discountPrice.summary;
+      ws.getCell('BJ' + startIndex).value = row.sellPrice.price;
+      ws.getCell('BO' + startIndex).value = row.sellPrice.summary;
+      startIndex++;
+    }
+    //results
+    const index = 37;
+    ws.getCell('Y' + index).value = results.time1;
+    ws.getCell('AB' + index).value = results.time2;
+    ws.getCell('AE' + index).value = results.time3;
+    ws.getCell('AH' + index).value = results.time4;
+    ws.getCell('AK' + index).value = results.time5;
+    ws.getCell('AQ' + index).value = results.returned;
+    ws.getCell('BE' + index).value = results.discountSumm;
+    ws.getCell('BO' + index).value = results.sellSumm;
+  };
+
+  // setupWorksheet.PropTypes = {
+  //   worksheet: Excel.Workbook,
+  // };
+
+  const importExcel = (workbook) => {
+    const ws = workbook.getWorksheet('стр1 - Tаблица 1');
+    setupWorksheet(ws);
+    try {
+      workbook.xlsx.writeBuffer().then((data) => {
+        const blob = new Blob([data]);
+        FileSaver.saveAs(blob, `ДЗЛ-${documentNumber}.xls`);
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files[0];
+    const wb = new Excel.Workbook();
+    const reader = new FileReader();
+
+    reader.readAsArrayBuffer(file);
+    reader.onload = () => {
+      const buffer = reader.result;
+      console.log('workbook 1212 instance');
+      wb.xlsx.load(buffer).then((workbook) => {
+        console.log(workbook.worksheets);
+        importExcel(workbook);
+        workbook.eachSheet((sheet, id) => {
+          sheet.eachRow((row, rowIndex) => {});
+        });
+      });
+    };
+
+    // reader.onload = () => {
+    //   const buffer = reader.result;
+    //   wb.xlsx.load(buffer).then((workbook) => {
+    //     console.log(workbook, 'workbook instance');
+    //     workbook.eachSheet((sheet, id) => {
+    //       sheet.eachRow((row, rowIndex) => {
+    //         console.log(row.values, rowIndex);
+    //       });
+    //     });
+    //   });
+    // };
+    // const workbook = new Excel.Workbook();
+    // await workbook.xlsx.readFile('op-6.XLS');
+
+    //верхняя правая часть
+    // worksheet.getCell('N1').value = 'Унифицированная форма № ОП-6';
+    // worksheet.getCell('N2').value = 'Утверждена постановлением Госкомстата';
+    // worksheet.getCell('N3').value = 'России от 25.12.98 № 132';
+    // worksheet.getCell('N5').value = 'Форма по ОКУД';
+    // worksheet.getCell('N6').value = 'По ОКПО';
+    // worksheet.getCell('O4').value = 'Код';
+    // worksheet.getCell('O5').value = '0330506';
+    // worksheet.getCell('M11').value = 'Вид деятельности по ОКДП';
+    // worksheet.getCell('N12').value = 'Вид операции';
+
+    // //верхняя левая часть
+    // //TODO: Вывод организации
+    // worksheet.getCell('A6').value = 'ООО Хлебушек';
+    // worksheet.getCell('A7').value = '(организация)';
+    // //TODO: Вывод Отправителя
+    // worksheet.getCell('A8').value = 'ООО Отправитель';
+    // worksheet.getCell('A9').value = '(структурное подразделение «отправитель»)';
+    // //TODO: Вывод Получателя
+    // worksheet.getCell('A10').value = 'ООО Получатель';
+    // worksheet.getCell('A11').value = '(структурное подразделение получатель)';
+    // worksheet.mergeCells('A6:L6');
+    // worksheet.mergeCells('A7:L7');
+    // worksheet.mergeCells('A8:L8');
+    // worksheet.mergeCells('A9:L9');
+    // worksheet.mergeCells('A10:L10');
+    // worksheet.mergeCells('A11:L11');
+    // worksheet.getCell('A6').style = {
+    //   border: '1px solid black',
+    // };
+
+    // worksheet.columns = [
+    //   { header: 'Продукция (изделие)', key: 'name', width: 10 },
+    //   { header: '', key: 'codeName', width: 10 },
+    //   { header: 'Единица измерения', key: 'measure', width: 32 },
+    //   { header: '', key: 'codeMeasure', width: 10 },
+    //   { header: 'Отпущено продукции (изделий)', key: 'time1', width: 15 },
+    //   { header: '', key: 'time2', width: 10 },
+    //   { header: '', key: 'time3', width: 10 },
+    //   { header: '', key: 'time4', width: 10 },
+    //   { header: '', key: 'time5', width: 10 },
+    //   { header: 'Возвращено продукции(изделий)', key: 'returned', width: 15 },
+    //   { header: 'Итого отпущено с учетом возврата', key: 'count', width: 15 },
+    //   { header: '', key: 'discountPrice', width: 10 },
+    //   { header: '', key: 'discountSumm', width: 10 },
+    //   { header: '', key: 'sellPrice', width: 10 },
+    //   { header: '', key: 'sellSumm', width: 10 },
+    //   { header: 'Примечание', key: 'primechanie', width: 15 },
+    // ];
+
+    // worksheet.addRow({
+    //   name: 'Наименование',
+    //   codeName: 'Код',
+    //   measure: 'Наименование',
+    //   codeMeasure: 'Код по ОКЕИ',
+    //   time1: 'Время отпуска ч. мин.',
+    //   time2: '',
+    //   time3: '',
+    //   time4: '',
+    //   time5: '',
+    //   returned: '',
+    //   count: 'Количество',
+    //   discountPrice: 'По учетным ценам',
+    //   discountSumm: '',
+    //   sellPrice: 'По ценам продажи',
+    //   sellSumm: '',
+    //   message: 'Примечание',
+    // });
+    // worksheet.addRow({
+    //   name: 'Наименование',
+    //   codeName: 'Код',
+    //   measure: 'Наименование',
+    //   codeMeasure: 'Код по ОКЕИ',
+    //   time1: '13:00',
+    //   time2: '14:00',
+    //   time3: '15:00',
+    //   time4: '16:00',
+    //   time5: '17:00',
+    //   returned: 'Возвращено продукции',
+    //   count: 'Количество',
+    //   discountPrice: 'Цена',
+    //   discountSumm: 'Сумма',
+    //   sellPrice: 'Цена',
+    //   sellSumm: 'Сумма',
+    //   message: 'Примечание',
+    // });
+
+    // worksheet.mergeCells('A1:B1');
+    // worksheet.mergeCells('C1:D1');
+    // worksheet.mergeCells('E1:I1');
+    // worksheet.mergeCells('E2:I2');
+    // worksheet.mergeCells('L2:M2');
+    // worksheet.mergeCells('N2:O2');
+
+    // worksheet.mergeCells('A2:A3');
+    // worksheet.mergeCells('B2:B3');
+    // worksheet.mergeCells('C2:C3');
+    // worksheet.mergeCells('D2:D3');
+    // worksheet.mergeCells('J1:J3');
+    // worksheet.mergeCells('K2:K3');
+    // worksheet.mergeCells('P1:P3');
+
+    // worksheet.mergeCells('K1:O1');
+
+    // worksheet.addRow({ id: 1, name: 'John Doe', dob: new Date(1970, 1, 1) });
+    // worksheet.addRow({ id: 2, name: 'Jane Doe', dob: new Date(1965, 1, 7) });
+  };
